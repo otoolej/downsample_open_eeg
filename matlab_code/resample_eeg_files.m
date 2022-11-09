@@ -1,32 +1,23 @@
 %-------------------------------------------------------------------------------
-% resample_eeg_files: 
+% resample_eeg_files: resample all files
 %
-% Syntax: [] = resample_eeg_files(eeg_dir, out_dir)
+% Syntax: resample_eeg_files(eeg_dir, out_dir, fs_new, lpf_cutoff)
 %
 % Inputs: 
-%     eeg_dir, out_dir - 
-%
-% Outputs: 
-%     [] - 
-%
-% Example:
-%     
+%     eeg_dir     - directory of EEG files (in CSV format); required
+%     out_dir     - empty directory for the downsampled files; required
+%     fs_new      - new sampling frequency in Hz; default 64 Hz
+%     lpf_cutoff  - low-pass cut off frequency for anti-aliasing filter; default 30 Hz
 %
 
 % John M. O' Toole, University College Cork
 % Started: 30-10-2022
 %
-% last update: Time-stamp: <2022-10-30 21:47:55 (otoolej)>
+% last update: Time-stamp: <2022-11-09 18:58:45 (otoolej)>
 %-------------------------------------------------------------------------------
-function resample_eeg_files(eeg_dir, out_dir)
-
-%---------------------------------------------------------------------
-% PARAMETERS: set here
-%---------------------------------------------------------------------
-% low-pass cutoff for antialiasing filter:
-fc = 95;
-% new sampling frequency:
-fs_new = 200;
+function resample_eeg_files(eeg_dir, out_dir, fs_new, lpf_cutoff)
+if(nargin < 3 || isempty(fs_new)), fs_new = 64; end
+if(nargin < 4 || isempty(lpf_cutoff)), lpf_cutoff = 30; end
 
 
 %---------------------------------------------------------------------
@@ -42,7 +33,7 @@ else
     for n = 1:length(lfiles)
         fname = [lfiles(n).folder filesep lfiles(n).name];
         
-        convert_file(fname, fc, fs_new, out_dir);
+        convert_file(fname, lpf_cutoff, fs_new, out_dir);
     end
 end
 
@@ -124,8 +115,8 @@ switch lower(filt_type)
 
   case 'iir'
     %  if IIR 
-    l_filt = 11;
-    [z, p, k] = butter(l_filt, fc / (fs / 2), 'low');    
+    l_filt = 21;
+    [z, p, k] = cheby2(l_filt, 100, fc / (fs / 2), 'low');    
     
     [sos, g] = zp2sos(z, p, k);
     y = filtfilt(sos, g, x);

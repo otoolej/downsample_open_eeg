@@ -3,22 +3,92 @@ convert all CSV files (e.g. ID01_epoch1.csv.xz) to the same sampling frequency
 
 John M. O'Toole, CergenX
 Started: 30-10-2022
-last update: Time-stamp: <2022-10-30 22:04:32 (otoolej)>
+last update: Time-stamp: <2022-11-09 18:29:56 (otoolej)>
 """
+import sys
+import argparse
 import numpy as np
 import pandas as pd
 from scipy import signal as sp
 import matplotlib.pyplot as plt
+import pathlib
+from multiprocessing import Pool
 
 
-# -------------------------------------------------------------------
-#  PARAMETERS, set here
-# -------------------------------------------------------------------
-FS_NEW = 200      # new sampling frequnecy for all files
-LPF_CUTOFF = 95   # low-pass filter cut off
+def resample_eeg_files(eeg_dir, out_dir, fs_new=64, lpf_cutoff=30, proc_parallel=False):
+    """ Convert all EEG files in .csv.xz (or .csv) format
+
+    Parameters
+    ----------
+    eeg_dir: string
+        directory contain the CSV EEG files
+    out_dir: string
+        directory to write the new files
+    fs_new: int
+        new sampling frequency (default 64) 
+    lpf_cutoff: float
+        low-pass filter cut-off (default 30)
+    proc_parallel: bool
+        speed-up processing by doing in parallel (if memory allows)
+    """
+    if proc_parallel:
+        all_files = pathlib.Path(eeg_dir).glob('*.[csv.xz csv]*')
+        all_args = [(fname, lpf_cutoff, fs_new, out_dir) for fname in all_files]
+
+        with Pool() as pool:
+            pool.starmap(convert_file, all_args)
+
+    else:
+        for fname in pathlib.Path(eeg_dir).glob('*.[csv.xz csv]*'):
+            convert_file(fname, lpf_cutoff, fs_new, out_dir)
+
+    
+
+def convert_file(fname, fc, fs_new, out_dir):
+    """read .csv file, re-sample, and save to new .csv file
+
+    Parameters
+    ----------
+    fname: string
+        file name of .csv file or .csv.xz (full path to file)
+    fc: float
+        cut-off frequency for low-pass anti-aliasing filter
+    fs_new: int
+        sampling frequency
+    out_dir: string
+        name of directory to save new file to
+    """
+    file_name = pathlib.Path(fname).name
+
+    eeg_df = pd.read_csv(fname)
+    
+    ttime = eeg_df['time'].values
+    fs = round(1 / (ttime[1] - ttime[0]))
+
+    ch_names = eeg_df.columns[1:]
+
+    print(f'\t|{file_name}\t| {fs}\t|')
+
+    if fs != fs_new:
+        x_resample_dt = dict.fromkeys(['time'] + list(ch_names))
+       
+        for ch in ch_names:
+            x_filt = filt_lowpass(eeg_df[ch].values, fs, fc, 'FIR')
+
+            x_resample_dt[ch] = sp.resample_poly(x_filt, fs_new, fs)
+
+        ttime_new = np.arange(0, int(len(x_filt) / fs), (1 / fs_new))
+        x_resample_dt['time'] = ttime_new
+    
+        eeg_new_df = pd.DataFrame(x_resample_dt)
+            
+    else:
+        eeg_new_df = eeg_df
+
+    eeg_new_df.to_csv(pathlib.Path(out_dir) / file_name, index=False, compression='infer')
 
 
-
+    
 def filt_lowpass(x, fs, fc, filt_type='FIR', db_plot=False):
     """Low pass filter
 
@@ -49,8 +119,8 @@ def filt_lowpass(x, fs, fc, filt_type='FIR', db_plot=False):
 
     elif filt_type.lower() == 'iir':
         #  design high-pass Butterworth filter:
-        l_filt = 11        
-        sos = sp.butter(l_filt, fc, btype='lowpass', fs=fs, output='sos')    
+        l_filt = 21        
+        sos = sp.cheby2(l_filt, Wn=fc, rs=100, btype='lowpass', fs=fs, output='sos')    
 
         # zero-phase filter:
         xmean = np.nanmean(x)        
@@ -63,92 +133,9 @@ def filt_lowpass(x, fs, fc, filt_type='FIR', db_plot=False):
     else:
         raise Exception("Unknown filter type; should be either FIR or IIR")
         
-        
-
+    return y
     
 
-def read_downsample_edf(fname, params=None, db_plot=False):
-    """ 
-    Parameters
-    ----------
-    fname: string
-        file name of EDF file
-    params: dataclasses
-        parameters 
-    db_plot: bool
-        plot the EEG
-
-    Returns
-    -------
-    eeg_down : ndarray
-        downsampled EEG data as bipolar montage
-    ch_refs : list
-        channel names
-    fs_new : int
-        frequency of downsampled EEG
-    imp_mask : ndarray
-        1D mask to indicate impedance check (sampled at fs_new)
-    """
-    if params is None:
-        params = ibi_parameters.ibiParams()
-        
-
-    # -------------------------------------------------------------------
-    #  read in the EEG data (using the channels needed)
-    # -------------------------------------------------------------------
-    (eeg_data, fs, ch_refs, times, edf_raw, idx, start_date) = load_edf(fname, params, db_plot)
-    n_channels, n_x = eeg_data.shape
-
-
-    # -------------------------------------------------------------------
-    #  filter each channel separately
-    # -------------------------------------------------------------------
-    # design the FIR filter:
-    b = firwin(
-        params.l_filt, params.fc, window=params.win_type, pass_zero="lowpass", fs=fs
-    )
-    
-    for n in range(n_channels):
-        # do the filtering:
-        x = _do_lpf(eeg_data[n, :], b)
-
-        db_plot_tmp = False
-        if db_plot_tmp:
-            plt.figure(2, clear=True)
-            plt.plot(eeg_data[n, :])
-            plt.plot(x)
-            plt.show()
-            plt.pause
-        
-        eeg_data[n, :] = x
-
-    # -------------------------------------------------------------------
-    #  downsample
-    # -------------------------------------------------------------------
-    x_down = _do_downsample(eeg_data[0, :], fs, params.fs_new)
-    eeg_down = np.zeros((n_channels, len(x_down)))
-    eeg_down[0, :] = x_down
-    for n in range(1, n_channels):
-        eeg_down[n, :] = _do_downsample(eeg_data[n, :], fs, params.fs_new)
-
-
-
-
-    
-    
-def _do_downsample(x, fs, fs_new):
-    """ do the downsampling for 1D signal """
-    f_ratio = fs / fs_new
-    
-    if f_ratio == int(f_ratio):
-        x_down = x[::int(f_ratio)]
-
-    else:
-        # if f_ratio is not an integer, then up sample then downsample to the correct
-        # sampling rate:
-        x_down = resample_poly(x, fs_new, fs, padtype='line')
-
-    return x_down
 
 
 def plot_freqz(b, a=1, Fs=1, Nfreq=None, fig_num=1, ba_or_sos='ba'):
@@ -188,3 +175,49 @@ def plot_freqz(b, a=1, Fs=1, Nfreq=None, fig_num=1, ba_or_sos='ba'):
 
     plt.pause(0.0001)
     plt.show()
+
+
+
+def _add_trailing_slash(ddir):
+    if not ddir.endswith('/'):
+        return ddir + '/'
+    return ddir
+    
+    
+def parsing_cli_args(args=[]):
+    """ parse command line arguments """
+    parser = argparse.ArgumentParser(description="Downsample EEG files")
+
+    parser.add_argument('--eeg_dir', type=str, required=True, 
+                        help="directory holding the compressed CSV files")
+    parser.add_argument('--out_dir', type=str, required=True, 
+                        help="directory to write downsampled files to")
+    parser.add_argument('--fs_new', type=float, default=64.0,
+                        help="new sampling frequency (in Hz)")
+    parser.add_argument('--lpf_cutoff', type=float, default=30.0,
+                        help="cut-off frequency for anti-aliasing filter (in Hz)")
+    parser.add_argument('--proc_parallel', type=bool, default=False,
+                        help="process in parallel?")
+    args = parser.parse_args()
+
+    return args
+
+
+
+if __name__ == "__main__":
+    # 1. first, read command line arguments (if any)
+    args = parsing_cli_args(sys.argv[1:])
+
+    from pprint import pprint
+    pprint(vars(args))
+
+    resample_eeg_files(**vars(args))
+    
+    
+    
+
+
+    
+
+
+    
