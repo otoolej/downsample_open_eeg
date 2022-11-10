@@ -1,4 +1,4 @@
-# Downsampling routines for a neonatal open-access EEG dataset
+# Downsampling routines for an open-access neonatal EEG dataset
 
 Python and Matlab code to downsample neonatal EEG files stored at the Zenodo repository [DOI:
 10.5281/zenodo.6587973](https://doi.org/10.5281/zenodo.6587973).
@@ -39,7 +39,7 @@ a list of modules and the versions used for testing.
 In a shell, run:
 ```sh
 $ cd python_code/
-$ python3 -m resample_xv_files --eeg_dir=<LOCATION_OF_EEG_FILES> --out_dir=<EMPTY_DIRECTORY_FOR_NEW_FILES>
+$ python3 -m resample_xz_files --eeg_dir=<LOCATION_OF_EEG_FILES> --out_dir=<EMPTY_DIRECTORY_FOR_NEW_FILES>
 ```
 
 All available command-line parameters:

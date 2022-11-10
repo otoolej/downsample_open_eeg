@@ -1,9 +1,9 @@
 """
 convert all CSV files (e.g. ID01_epoch1.csv.xz) to the same sampling frequency
 
-John M. O'Toole, CergenX
+John M. O'Toole, University College Cork
 Started: 30-10-2022
-last update: Time-stamp: <2022-11-09 18:29:56 (otoolej)>
+last update: Time-stamp: <2022-11-10 21:05:51 (otoolej)>
 """
 import sys
 import argparse
