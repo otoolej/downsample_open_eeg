@@ -1,4 +1,4 @@
-# Downsampling routines for an open-access neonatal EEG dataset
+# Downsampling Routines for an Open-Access Neonatal EEG Dataset
 
 Python and Matlab code to downsample neonatal EEG files stored at the Zenodo repository [DOI:
 10.5281/zenodo.6587973](https://doi.org/10.5281/zenodo.6587973).
@@ -14,7 +14,7 @@ stored in 2 formats: European Data Format (EDF) and a plain-text comma-separated
 (CSV) format. The EDF version can be used in most EEG reviewing software, for example
 using [EDFbrowser](https://www.teuniz.net/edfbrowser/). The CSV version is a convient
 format for computer processing and the code presented here reads this format. All CSV
-files are in a compressed format using the [XZ](https://tukaani.org/xz/) compression format.
+files are compressed using the [XZ](https://tukaani.org/xz/) compression format.
 
 
 
@@ -33,7 +33,7 @@ We present downsampling routines to process the EEG files using either Matlab or
 ---
 
 ## Python code
-Tested with Python 3.9 and 3.10. See [requirements.txt](python/requirements.txt) file for
+Tested with Python 3.9 and 3.10. See [requirements.txt](python_code/requirements.txt) file for
 a list of modules and the versions used for testing. 
 
 In a shell, run:
