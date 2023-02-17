@@ -1,7 +1,7 @@
 # Downsampling Routines for an Open-Access Neonatal EEG Dataset
 
 Python and Matlab code to downsample neonatal EEG files stored at the Zenodo repository [DOI:
-10.5281/zenodo.6587973](https://doi.org/10.5281/zenodo.6587973).
+10.5281/zenodo.7477575](https://doi.org/10.5281/zenodo.7477575).
 
 The EEG is recorded from newborn infants in the neonatal intensive care unit using 2
 different EEG machines, the NicoletOne ICU Monitor (Natus, Middletion, WI, USA) and the
@@ -9,7 +9,7 @@ Neurofax EEG-1200 (Nihon Khoden, Tokyo, Japan). EEG was sampled at a rate of 256
 the NicoletOne and 200 Hz for the Neurofax. The open dataset is described in reference
 [1](#references).
 
-The EEG data in [DOI:10.5281/zenodo.6587973](https://doi.org/10.5281/zenodo.6587973) is
+The EEG data in [DOI:10.5281/zenodo.7477575](https://doi.org/10.5281/zenodo.7477575) is
 stored in 2 formats: European Data Format (EDF) and a plain-text comma-separated values
 (CSV) format. The EDF version can be used in most EEG reviewing software, for example
 using [EDFbrowser](https://www.teuniz.net/edfbrowser/). The CSV version is a convient
@@ -84,4 +84,4 @@ where 64 is the new sampling frequency and 30 is the low-pass filter cutoff freq
    arXiv:2206.04420](https://arxiv.org/abs/2206.04420). 2022 Jun 9.
 2. JM O'Toole, SR Mathieson, F Magarelli, WP Marnane, G Lightbody & GB
    Boylan. (2022). Neonatal EEG Graded for Severity of Background Abnormalities (1.0)
-   [Data set]. Zenodo. [10.5281/zenodo.6587973](https://doi.org/10.5281/zenodo.6587973)
+   [Data set]. Zenodo. [DOI: 10.5281/zenodo.7477575](https://doi.org/10.5281/zenodo.7477575)
